@@ -14,6 +14,8 @@ test('public invitation keeps content order, one date/countdown and safe album a
       window.renderPhotos = photos => { publicInfo.photos = photos; main.innerHTML = welcome(); };`);
     const doc = dom.window.document;
     assert.equal(doc.querySelector('#header').hidden,true);
+    assert.equal(doc.querySelector('#footer').hidden,true);
+    assert.equal(doc.querySelector('#footer').textContent,'');
     assert.equal(doc.querySelectorAll('#wedding-countdown').length,1);
     assert.equal(doc.querySelectorAll('#main .card').length,0);
     const article = doc.querySelector('.wedding-invitation');

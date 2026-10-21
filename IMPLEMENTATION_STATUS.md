@@ -81,3 +81,5 @@ public/app.js agora monta um convite continuo na rota /: identificacao, ornament
 public/styles.css limita largura, centraliza conteudo e usa clamp, flex-wrap e quebra de textos/botao. Sem alturas fixas ou areas internas de rolagem na nova composicao; cores usam tokens existentes. Nao ha sistema dinamico de temas implementado no estado atual: nenhuma nova paleta paralela foi criada.
 
 Validacao: node scripts/check.js, node --test tests/*.test.js (28 aprovados), git diff --check. Novo tests/public-layout.test.js verifica ordem, unicidade de data/contador, detalhes opcionais, ausencia de cartoes/textos provisorios, rodape e links invalidos. Revisao estatica de CSS para celular e desktop; inspecao visual real nao executada: inventario sem navegadores e tentativa de abrir IAB retornou Browser is not available. Nao houve deploy nem migration.
+
+Ajuste da abertura publica: rodape oculto e vazio na rota /, mantendo apenas os nomes principais. Conteudo centralizado verticalmente usando min-height de viewport e flex, com padding simetrico e altura livre para rolagem natural. Sintaxe e testes de layout/contador verificados; sem migration.
