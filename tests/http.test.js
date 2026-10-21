@@ -7,6 +7,25 @@ import { createDatabase,reset,testAdapter,family,gift,ADMIN } from './helpers.js
 let db,server,base,config;
 const PASSWORD=' senha preservada ';
 const allowedUser={id:ADMIN};
+test('limpeza exige admin e confirmação e remove vínculos preservando catálogo e sessão admin',async () => {
+ const admin=client();await admin.login();
+ const inv=await family(db,'Teste de limpeza');const item=await gift(db,'Presente preservado');
+ const issued=await token(admin,inv.id);const guest=client();await guest.enter(issued.url);
+ assert.equal((await guest.request(`/api/guest/gifts/${item.public_id}/reserve`,'POST')).status,200);
+ assert.equal((await guest.request('/api/admin/invitations','DELETE',{confirmation:'EXCLUIR TODOS'})).status,403);
+ assert.equal((await admin.request('/api/admin/invitations','DELETE',{confirmation:'ERRADO'})).status,422);
+ assert.equal((await admin.request('/api/admin/invitations','DELETE',{confirmation:'EXCLUIR TODOS'},{headers:{'X-CSRF-Token':''}})).status,403);
+ await assert.rejects(db.query('select public.wedding_clear_invitations(null,$1)',['EXCLUIR TODOS']));
+ assert.equal((await db.query('select count(*)::int n from public.invitations')).rows[0].n,1);
+ const response=await admin.request('/api/admin/invitations','DELETE',{confirmation:'EXCLUIR TODOS'});
+ assert.equal(response.status,200);assert.equal(response.data.deleted,1);
+ for(const table of ['invitations','guests','invitation_tokens','gift_reservations']) assert.equal((await db.query(`select count(*)::int n from public.${table}`)).rows[0].n,0);
+ assert.equal((await db.query('select count(*)::int n from public.gifts')).rows[0].n,1);
+ assert.equal((await db.query('select count(*)::int n from public.wedding_settings')).rows[0].n>0,true);
+ assert.equal((await guest.request('/api/guest/home')).status,401);
+ assert.equal((await admin.request('/api/admin/dashboard')).status,200);
+ assert.equal((await db.query("select count(*)::int n from public.activity_logs where action='invitations.cleared'")).rows[0].n,1);
+});
 before(async () => { db=await createDatabase(); });
 after(async () => { await new Promise(resolve=>server.close(resolve));await db.close(); });
 beforeEach(async () => {

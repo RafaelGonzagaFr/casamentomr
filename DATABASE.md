@@ -19,3 +19,9 @@ Validacao local usa PGlite isolado e nao acessa Supabase remoto. A migration foi
 ## Migration 20261021_wedding_configuration.sql
 
 Aplicar depois de 20261019_photographs.sql. Amplia a lista permitida de chaves em wedding_mutate para os dados do casamento, usando o mesmo upsert e sem alterar tabelas/grants. Nao reaplicar migrations antigas depois desta. Novas instalacoes ja incluem os campos no schema.sql. wedding_at e derivado no backend de wedding_date, ceremony_time e timezone, sem depender do fuso do servidor; nao e armazenado separadamente.
+
+## Limpar todos os convites (uso administrativo)
+
+Em Convites, a secao Limpar todos os convites exige digitar EXCLUIR TODOS e confirmar a exclusao permanente. Apaga convites, convidados, respostas, tokens/links, reservas ativas e historicas e sessoes dos convidados. Mantem presentes, categorias, configuracoes, administradores, sessoes administrativas e registros de auditoria. Presentes antes reservados voltam a ficar disponiveis conforme sua situacao de cadastro. IDs nao sao reiniciados.
+
+Antes de publicar, aplicar supabase/migrations/20261021_clear_invitations.sql em banco existente. Essa migration APENAS cria a funcao administrativa; nao apaga registros ao ser executada. A exclusao ocorre somente ao acionar e confirmar a opcao na interface. Novas instalacoes incluem a funcao no schema.sql. Nao reaplicar schema.sql em banco existente. A funcao e restrita a service_role, valida administrador ativo e confirmacao, bloqueia escritas concorrentes e executa em transacao; endpoint exige sessao administrativa, origem e CSRF. Operacao registrada em activity_logs. Banco remoto nao alterado pelo agente.

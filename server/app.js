@@ -158,6 +158,10 @@ export function createApp(config, { db, login }) {
     res.json(data);
   });
   app.get('/api/admin/invitations', (req, res) => sendList(req, res, db.from('invitation_summary').select('*', { count: 'exact' }).order('id', { ascending: false })));
+  app.delete('/api/admin/invitations', async (req, res) => {
+    if (req.body.confirmation !== 'EXCLUIR TODOS') throw new HttpError(422, 'Digite EXCLUIR TODOS para confirmar.');
+    res.json(await result(db.rpc('wedding_clear_invitations', { p_admin: req.admin.id, p_confirmation: req.body.confirmation })));
+  });
   app.post('/api/admin/invitations', async (req, res) => res.status(201).json(await mutate(req, 'invitation.create', { name: text(req.body.name, 'Nome'), max_guests: integer(req.body.max_guests, 'Limite', 1, 95) })));
   app.get('/api/admin/invitations/:id', async (req, res) => {
     const invId = id(req.params.id);

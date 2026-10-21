@@ -205,3 +205,9 @@ Em banco existente, aplicar as migrations 20261019_photographs.sql e 20261021_we
 Na tela Configuracoes, informe data, horario da cerimonia e fuso IANA (padrao America/Bahia). O contador aparece na pagina inicial e no convite e muda para a mensagem configurada quando o evento inicia. Sem horario cadastrado, a data continua sendo exibida e o contador permanece oculto. Horarios ambiguos ou inexistentes em mudancas de horario de verao sao rejeitados. O prazo RSVP permanece no horario da Bahia.
 
 Configure tambem foto externa HTTPS, locais, enderecos, mapa, historia e informacoes adicionais. Os campos sao opcionais, exceto nome de exibicao e fuso no formulario. A nova versao nao faz upload de fotos dos convidados.
+
+## Limpar todos os convites (uso administrativo)
+
+Em Convites, a secao Limpar todos os convites exige digitar EXCLUIR TODOS e confirmar a exclusao permanente. Apaga convites, convidados, respostas, tokens/links, reservas ativas e historicas e sessoes dos convidados. Mantem presentes, categorias, configuracoes, administradores, sessoes administrativas e registros de auditoria. Presentes antes reservados voltam a ficar disponiveis conforme sua situacao de cadastro. IDs nao sao reiniciados.
+
+Antes de publicar, aplicar supabase/migrations/20261021_clear_invitations.sql em banco existente. Essa migration APENAS cria a funcao administrativa; nao apaga registros ao ser executada. A exclusao ocorre somente ao acionar e confirmar a opcao na interface. Novas instalacoes incluem a funcao no schema.sql. Nao reaplicar schema.sql em banco existente. A funcao e restrita a service_role, valida administrador ativo e confirmacao, bloqueia escritas concorrentes e executa em transacao; endpoint exige sessao administrativa, origem e CSRF. Operacao registrada em activity_logs. Banco remoto nao alterado pelo agente.

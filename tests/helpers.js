@@ -81,7 +81,7 @@ export function testAdapter(db) {
     from: table => new Query(table),
     rpc: async (name,args) => {
       try {
-        const data = name === 'wedding_dashboard' ? (await db.query('select public.wedding_dashboard() as value')).rows[0].value : await mutate(db,args.p_action,args.p_data,args.p_invitation,args.p_admin);
+        const data = name === 'wedding_clear_invitations' ? (await db.query('select public.wedding_clear_invitations($1,$2) as value',[args.p_admin,args.p_confirmation])).rows[0].value : name === 'wedding_dashboard' ? (await db.query('select public.wedding_dashboard() as value')).rows[0].value : await mutate(db,args.p_action,args.p_data,args.p_invitation,args.p_admin);
         return {data,error:null};
       } catch(error) { return {data:null,error:{code:error.code,message:error.message}}; }
     },
