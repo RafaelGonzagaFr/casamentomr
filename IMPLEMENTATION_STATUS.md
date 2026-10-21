@@ -71,3 +71,5 @@ Proximo incremento: editor de cores nos tokens existentes, depois dados e ferram
 ## Correcao da renderizacao de Configuracoes
 
 Identificada apos o commit 00daf89: a variavel details era montada em settingsPage mas nao interpolada no formulario. Corrigida a inclusao dos campos do casamento e fotografias em public/app.js. tests/frontend.test.js agora verifica a existencia dos novos inputs, textareas e seletor de visibilidade no DOM. Sintaxe e 27 testes aprovados. Sem alteracao SQL; nao e necessario reaplicar migrations. Correcoes locais ainda precisam de commit/push e deploy.
+
+Ajuste de apresentacao: detalhes do casamento exibem DD/MM/AAAA - HH:mm acima do contador, sem mostrar o fuso. Calculo do contador preservado. Sem migration.
