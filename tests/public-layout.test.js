@@ -23,13 +23,11 @@ test('public invitation keeps content order, one date/countdown and safe album a
     assert.ok(children.indexOf(article.querySelector('h1')) < children.indexOf(article.querySelector('#wedding-countdown')));
     assert.ok(children.indexOf(article.querySelector('#wedding-countdown')) < children.indexOf(article.querySelector('.wedding-date')));
     assert.ok(children.indexOf(article.querySelector('.wedding-date')) < children.indexOf(article.querySelector('.invitation-guidance')));
-    assert.ok(children.indexOf(article.querySelector('.invitation-guidance')) < children.indexOf(article.querySelector('.album-access')));
+    assert.equal(article.querySelector('.album-access'),null);
     assert.equal((doc.body.textContent.match(/20\/03\/2027/g)||[]).length,1);
     assert.equal(article.querySelector('.wedding-date').textContent,'20/03/2027 - 18:30');
     assert.doesNotMatch(article.textContent,/America\/Bahia|Olá|Não mostrar|Serviço externo/);
     assert.match(article.textContent,/Nossa história/);
-    const link = article.querySelector('.album-access a');
-    assert.equal(link.target,'_blank'); assert.equal(link.rel,'noopener noreferrer');
     assert.equal(doc.querySelector('a[href="/admin/login"]'),null);
     for (const photos of [null,{url:'javascript:alert(1)'},{url:'https://drive.google.com.evil.test'}]) {
       dom.window.renderPhotos(photos);

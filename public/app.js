@@ -70,7 +70,7 @@ function photosSection() {
   return `<div class="album-access"><a class="btn" href="${e(photo.url)}" target="_blank" rel="noopener noreferrer">${e(photo.button || 'Acessar álbum de fotografias')}</a></div>`;
 }
 function welcome() {
-  return `<article class="wedding-invitation"><p class="eyebrow">Nosso casamento</p><div class="ornament" aria-hidden="true">♡</div><h1>${e(publicInfo.couple_names)}</h1><div id="wedding-countdown" class="countdown" role="group" aria-label="Contagem regressiva para o casamento"></div>${publicInfo.wedding_date || publicInfo.ceremony_time ? `<p class="wedding-date">${[publicInfo.wedding_date ? dateOnly(publicInfo.wedding_date) : null, publicInfo.ceremony_time].filter(Boolean).map(e).join(' - ')}</p>` : ''}<p class="invitation-guidance muted">Abra o link ou escaneie o QR Code do seu convite para confirmar sua presença e escolher um presente.</p>${photosSection()}${weddingDetails(true)}</article>`;
+  return `<article class="wedding-invitation"><p class="eyebrow">Nosso casamento</p><div class="ornament" aria-hidden="true">♡</div><h1>${e(publicInfo.couple_names)}</h1><div id="wedding-countdown" class="countdown" role="group" aria-label="Contagem regressiva para o casamento"></div>${publicInfo.wedding_date || publicInfo.ceremony_time ? `<p class="wedding-date">${[publicInfo.wedding_date ? dateOnly(publicInfo.wedding_date) : null, publicInfo.ceremony_time].filter(Boolean).map(e).join(' - ')}</p>` : ''}<p class="invitation-guidance muted">Abra o link ou escaneie o QR Code do seu convite para confirmar sua presença e escolher um presente.</p>${weddingDetails(true)}</article>`;
 }
 function weddingDetails(publicPage = false) {
   const data = publicInfo;
