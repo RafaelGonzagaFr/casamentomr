@@ -83,3 +83,9 @@ public/styles.css limita largura, centraliza conteudo e usa clamp, flex-wrap e q
 Validacao: node scripts/check.js, node --test tests/*.test.js (28 aprovados), git diff --check. Novo tests/public-layout.test.js verifica ordem, unicidade de data/contador, detalhes opcionais, ausencia de cartoes/textos provisorios, rodape e links invalidos. Revisao estatica de CSS para celular e desktop; inspecao visual real nao executada: inventario sem navegadores e tentativa de abrir IAB retornou Browser is not available. Nao houve deploy nem migration.
 
 Ajuste da abertura publica: rodape oculto e vazio na rota /, mantendo apenas os nomes principais. Conteudo centralizado verticalmente usando min-height de viewport e flex, com padding simetrico e altura livre para rolagem natural. Sintaxe e testes de layout/contador verificados; sem migration.
+
+## Reorganizacao da tela /convite
+
+Nome do convite como unico h1, sem rotulo Seu convite. Mensagem welcome_message existente preservada (modelo atual armazena essa mensagem nas configuracoes do casamento, nao por convite). Data/hora em destaque; prazo real formatado em DD/MM/AAAA no fuso da Bahia; formularios individuais mantidos com bloqueio visual ao expirar e regras backend inalteradas. Contador unico sob titulo Quanto tempo falta ate o grande dia. Catalogo existente incorporado abaixo do contador, com os mesmos endpoints, reservas, troca/cancelamento, acesso e paginacao; rota /convite/presentes preservada. Album e detalhes opcionais abaixo, sem repetir mensagem/data/contador.
+
+Alterados public/app.js, public/styles.css e tests/frontend.test.js. Layout centralizado e fluido, sem alturas fixas. Validacao: sintaxe, git diff --check e 28 testes aprovados, incluindo verificacao DOM da ordem/conteudo e fluxos completos de confirmacao e presentes. Inspecao visual em navegador nao disponivel nesta sessao; Supabase remoto e deploy nao alterados. Sem SQL novo.
