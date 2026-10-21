@@ -50,6 +50,13 @@ try{
  assert.ok(blocks.indexOf(guest.doc.querySelector('.invitation-rsvp'))<blocks.indexOf(guest.doc.querySelector('.invitation-countdown')));
  assert.equal(guest.doc.querySelector('.guest-invitation button[data-action="gift-choice"]'),null);
  await guest.submit('form[data-endpoint$="/rsvp"]',{rsvp_status:'ATTENDING'});await wait(()=>guest.doc.querySelector('#notice').textContent==='Confirmação salva.');
+ await wait(()=>guest.doc.querySelector('.rsvp-result'));
+ assert.match(guest.doc.querySelector('.rsvp-result').textContent,/Presença confirmada/);
+ assert.equal(guest.doc.querySelector('.rsvp-edit').open,false);
+ assert.ok(guest.doc.querySelector('.rsvp-edit form[data-endpoint$="/rsvp"]'));
+ await guest.click('a[href="/convite"]');
+ await wait(()=>guest.doc.querySelector('.rsvp-result'));
+ assert.equal(guest.doc.querySelector('.rsvp-edit').open,false);
  await guest.click('a[href="/convite/presentes"]');await wait(()=>guest.doc.querySelector('button[data-action="gift-choice"]'));
  await guest.click('button[data-action="gift-choice"]');await wait(()=>guest.doc.querySelector('h1')?.textContent==='Seu presente');assert.ok(guest.doc.querySelector('h2'));
  await guest.click('a[href="/convite/presentes"]');await wait(()=>guest.doc.querySelector('button[data-swap="true"]'));
