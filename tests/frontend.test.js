@@ -41,15 +41,14 @@ try{
  assert.equal(guest.doc.querySelector('.guest-invitation>.eyebrow'),null);
  assert.equal(guest.doc.querySelector('.invitation-message').textContent,'Uma mensagem especial para vocês');
  assert.equal(guest.doc.querySelector('.guest-invitation>.wedding-date').textContent,'Dia da cerimônia: 20/03/2099 - 18:30');
- assert.doesNotMatch(guest.doc.querySelector('.invitation-gifts').textContent,/Para o nosso lar/);
+ assert.equal(guest.doc.querySelector('.invitation-gifts'),null);
  assert.equal(guest.doc.querySelector('.rsvp-deadline').textContent,'Confirme sua presença até 10/03/2099');
  assert.equal(guest.doc.querySelector('#countdown-heading').textContent,'Quanto tempo falta até o grande dia');
  assert.equal(guest.doc.querySelectorAll('#wedding-countdown').length,1);
  assert.equal(guest.doc.querySelectorAll('#wedding-countdown strong').length,4);
  const blocks=[...guest.doc.querySelector('.guest-invitation').children];
  assert.ok(blocks.indexOf(guest.doc.querySelector('.invitation-rsvp'))<blocks.indexOf(guest.doc.querySelector('.invitation-countdown')));
- assert.ok(blocks.indexOf(guest.doc.querySelector('.invitation-countdown'))<blocks.indexOf(guest.doc.querySelector('.invitation-gifts')));
- assert.ok(guest.doc.querySelector('.invitation-gifts button[data-action="gift-choice"]'));
+ assert.equal(guest.doc.querySelector('.guest-invitation button[data-action="gift-choice"]'),null);
  await guest.submit('form[data-endpoint$="/rsvp"]',{rsvp_status:'ATTENDING'});await wait(()=>guest.doc.querySelector('#notice').textContent==='Confirmação salva.');
  await guest.click('a[href="/convite/presentes"]');await wait(()=>guest.doc.querySelector('button[data-action="gift-choice"]'));
  await guest.click('button[data-action="gift-choice"]');await wait(()=>guest.doc.querySelector('h1')?.textContent==='Seu presente');assert.ok(guest.doc.querySelector('h2'));
