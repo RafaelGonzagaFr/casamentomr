@@ -40,7 +40,8 @@ try{
  assert.equal(guest.doc.querySelectorAll('#main h1').length,1);
  assert.equal(guest.doc.querySelector('.guest-invitation>.eyebrow'),null);
  assert.equal(guest.doc.querySelector('.invitation-message').textContent,'Uma mensagem especial para vocês');
- assert.equal(guest.doc.querySelector('.guest-invitation>.wedding-date').textContent,'20/03/2099 - 18:30');
+ assert.equal(guest.doc.querySelector('.guest-invitation>.wedding-date').textContent,'Dia da cerimônia: 20/03/2099 - 18:30');
+ assert.doesNotMatch(guest.doc.querySelector('.invitation-gifts').textContent,/Para o nosso lar/);
  assert.equal(guest.doc.querySelector('.rsvp-deadline').textContent,'Confirme sua presença até 10/03/2099');
  assert.equal(guest.doc.querySelector('#countdown-heading').textContent,'Quanto tempo falta até o grande dia');
  assert.equal(guest.doc.querySelectorAll('#wedding-countdown').length,1);
