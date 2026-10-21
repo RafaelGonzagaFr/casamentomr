@@ -28,7 +28,7 @@ test('public invitation keeps content order, one date/countdown and safe album a
     assert.match(article.textContent,/Nossa história/);
     const link = article.querySelector('.album-access a');
     assert.equal(link.target,'_blank'); assert.equal(link.rel,'noopener noreferrer');
-    assert.ok(doc.querySelector('#footer a[href="/admin/login"]'));
+    assert.equal(doc.querySelector('a[href="/admin/login"]'),null);
     for (const photos of [null,{url:'javascript:alert(1)'},{url:'https://drive.google.com.evil.test'}]) {
       dom.window.renderPhotos(photos);
       assert.equal(doc.querySelector('.album-access'),null);

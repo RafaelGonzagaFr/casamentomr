@@ -57,7 +57,7 @@ function layout(path) {
   if (admin) items = [['/admin','Painel'],['/admin/convites','Convites'],['/admin/presentes','Presentes'],['/admin/reservas','Reservas'],['/admin/categorias','Categorias'],['/admin/configuracoes','Configurações']];
   if (guest) items = [['/convite','Meu convite'],['/convite/presentes','Presentes'],['/convite/meus-presentes','Meu presente']];
   header.innerHTML = `<div class="header-inner"><a href="${admin ? '/admin' : guest ? '/convite' : '/'}" data-nav class="brand">${e(admin ? 'Administração' : publicInfo.couple_names)}</a>${items.length ? `<nav aria-label="Menu principal">${items.map(([url,label]) => `<a href="${url}" data-nav${path === url || (url !== '/admin' && url !== '/convite' && path.startsWith(`${url}/`)) ? ' aria-current="page"' : ''}>${label}</a>`).join('')}<button type="button" class="logout" data-action="logout">Sair</button></nav>` : ''}</div>`;
-  footer.innerHTML = `${e(publicInfo.couple_names)}${path !== '/' && publicInfo.wedding_date ? ` · ${e(dateOnly(publicInfo.wedding_date))}` : ''}${!guest && !admin ? '<p><a href="/admin/login" data-nav>Acesso administrativo</a></p>' : ''}`;
+  footer.innerHTML = `${e(publicInfo.couple_names)}${path !== '/' && publicInfo.wedding_date ? ` · ${e(dateOnly(publicInfo.wedding_date))}` : ''}`;
 }
 function photosSection() {
   const photo = publicInfo.photos;
