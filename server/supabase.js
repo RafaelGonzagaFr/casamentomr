@@ -48,6 +48,10 @@ export async function result(query) {
       message: error.message
     });
 
+    if (error.message === 'Bucket not found' || error.code === 'NoSuchBucket') {
+      throw new HttpError(503, 'Armazenamento de imagens de presentes não configurado. Execute supabase/storage.sql no projeto Supabase usado pelo aplicativo e confira STORAGE_BUCKET (padrão: wedding-gifts).');
+    }
+
     if (['PGRST202', '42883'].includes(error.code)) {
       throw new HttpError(503, 'Função do banco indisponível. Execute a migration correspondente no mesmo projeto Supabase usado pelo aplicativo e atualize o cache da API.');
     }
