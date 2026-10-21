@@ -51,24 +51,31 @@ function pagination(data) {
 function layout(path) {
   const admin = path.startsWith('/admin') && path !== '/admin/login';
   const guest = path.startsWith('/convite');
-  document.body.className = admin ? 'admin' : 'guest';
+  document.body.className = path === '/' ? 'public-wedding' : admin ? 'admin' : 'guest';
+  header.hidden = path === '/';
   let items = [];
   if (admin) items = [['/admin','Painel'],['/admin/convites','Convites'],['/admin/presentes','Presentes'],['/admin/reservas','Reservas'],['/admin/categorias','Categorias'],['/admin/configuracoes','Configurações']];
   if (guest) items = [['/convite','Meu convite'],['/convite/presentes','Presentes'],['/convite/meus-presentes','Meu presente']];
   header.innerHTML = `<div class="header-inner"><a href="${admin ? '/admin' : guest ? '/convite' : '/'}" data-nav class="brand">${e(admin ? 'Administração' : publicInfo.couple_names)}</a>${items.length ? `<nav aria-label="Menu principal">${items.map(([url,label]) => `<a href="${url}" data-nav${path === url || (url !== '/admin' && url !== '/convite' && path.startsWith(`${url}/`)) ? ' aria-current="page"' : ''}>${label}</a>`).join('')}<button type="button" class="logout" data-action="logout">Sair</button></nav>` : ''}</div>`;
-  footer.innerHTML = `${e(publicInfo.couple_names)}${publicInfo.wedding_date ? ` · ${e(dateOnly(publicInfo.wedding_date))}` : ''}${!guest && !admin ? '<p><a href="/admin/login" data-nav>Acesso administrativo</a></p>' : ''}`;
+  footer.innerHTML = `${e(publicInfo.couple_names)}${path !== '/' && publicInfo.wedding_date ? ` · ${e(dateOnly(publicInfo.wedding_date))}` : ''}${!guest && !admin ? '<p><a href="/admin/login" data-nav>Acesso administrativo</a></p>' : ''}`;
 }
 function photosSection() {
   const photo = publicInfo.photos;
   if (!photo) return '';
-  return `<section class="card spaced"><span aria-hidden="true">&#128247;</span><h2>${e(photo.title)}</h2><p>${e(photo.description)}</p><a class="btn" href="${e(photo.url)}" target="_blank" rel="noopener noreferrer">${e(photo.button)}</a><p class="muted spaced">Serviço externo: Google Drive. O casal configura as permissões de acesso; o link pode permitir somente visualização.</p></section>`;
+  try {
+    const url = new URL(photo.url);
+    if (url.protocol !== 'https:' || url.hostname !== 'drive.google.com' || url.username || url.password || url.port) return '';
+  } catch { return ''; }
+  return `<div class="album-access"><a class="btn" href="${e(photo.url)}" target="_blank" rel="noopener noreferrer">${e(photo.button || 'Acessar álbum de fotografias')}</a></div>`;
 }
 function welcome() {
-  return `<section class="card welcome"><p class="eyebrow">Nosso casamento</p><div class="ornament" aria-hidden="true">♡</div><h1>${e(publicInfo.couple_names)}</h1>${publicInfo.wedding_date ? `<p>${e(dateOnly(publicInfo.wedding_date))}</p>` : ''}<p class="muted">Abra o link ou escaneie o QR Code do seu convite para confirmar sua presença e escolher um presente.</p></section>${photosSection()}`;
+  return `<article class="wedding-invitation"><p class="eyebrow">Nosso casamento</p><div class="ornament" aria-hidden="true">♡</div><h1>${e(publicInfo.couple_names)}</h1><div id="wedding-countdown" class="countdown" role="group" aria-label="Contagem regressiva para o casamento"></div>${publicInfo.wedding_date || publicInfo.ceremony_time ? `<p class="wedding-date">${[publicInfo.wedding_date ? dateOnly(publicInfo.wedding_date) : null, publicInfo.ceremony_time].filter(Boolean).map(e).join(' - ')}</p>` : ''}<p class="invitation-guidance muted">Abra o link ou escaneie o QR Code do seu convite para confirmar sua presença e escolher um presente.</p>${photosSection()}${weddingDetails(true)}</article>`;
 }
-function weddingDetails() {
+function weddingDetails(publicPage = false) {
   const data = publicInfo;
-  return `<section class="card spaced wedding-details">${data.hero_image_url ? `<img class="wedding-hero" src="${e(data.hero_image_url)}" alt="${e(data.couple_names)}" referrerpolicy="no-referrer">` : ''}${data.welcome_message ? `<p>${e(data.welcome_message)}</p>` : ''}${data.wedding_date || data.ceremony_time ? `<p>${[data.wedding_date ? dateOnly(data.wedding_date) : null, data.ceremony_time].filter(Boolean).map(e).join(' - ')}</p>` : ''}<div id="wedding-countdown" class="countdown" role="group" aria-label="Contagem regressiva para o casamento"></div>${[['Cerimônia',data.ceremony_location,data.ceremony_address],['Recepção',data.reception_location,data.reception_address]].map(([title,place,address]) => place || address ? `<h2>${title}</h2><p>${e(place)}<br>${e(address)}</p>` : '').join('')}${data.maps_url ? `<p><a href="${e(data.maps_url)}" target="_blank" rel="noopener noreferrer">Ver localização no mapa</a></p>` : ''}${data.wedding_story ? `<h2>Nossa história</h2><p class="preserve-lines">${e(data.wedding_story)}</p>` : ''}${data.additional_information ? `<h2>Informações adicionais</h2><p class="preserve-lines">${e(data.additional_information)}</p>` : ''}</section>`;
+  const extra = data.hero_image_url || data.ceremony_location || data.ceremony_address || data.reception_location || data.reception_address || data.maps_url || data.wedding_story || data.additional_information;
+  if (publicPage && !extra) return '';
+  return `<section class="${publicPage ? 'invitation-details' : 'card spaced wedding-details'}">${data.hero_image_url ? `<img class="wedding-hero" src="${e(data.hero_image_url)}" alt="${e(data.couple_names)}" referrerpolicy="no-referrer">` : ''}${!publicPage && data.welcome_message ? `<p>${e(data.welcome_message)}</p>` : ''}${!publicPage && (data.wedding_date || data.ceremony_time) ? `<p>${[data.wedding_date ? dateOnly(data.wedding_date) : null, data.ceremony_time].filter(Boolean).map(e).join(' - ')}</p>` : ''}${!publicPage ? '<div id="wedding-countdown" class="countdown" role="group" aria-label="Contagem regressiva para o casamento"></div>' : ''}${[['Cerimônia',data.ceremony_location,data.ceremony_address],['Recepção',data.reception_location,data.reception_address]].map(([title,place,address]) => place || address ? `<h2>${title}</h2><p>${e(place)}<br>${e(address)}</p>` : '').join('')}${data.maps_url ? `<p><a href="${e(data.maps_url)}" target="_blank" rel="noopener noreferrer">Ver localização no mapa</a></p>` : ''}${data.wedding_story ? `<h2>Nossa história</h2><p class="preserve-lines">${e(data.wedding_story)}</p>` : ''}${data.additional_information ? `<h2>Informações adicionais</h2><p class="preserve-lines">${e(data.additional_information)}</p>` : ''}</section>`;
 }
 function startCountdown() {
   clearInterval(countdownTimer);
@@ -162,7 +169,7 @@ async function render() {
       if (path.startsWith('/convite') && session.role !== 'guest') throw new ApiError(401,'Abra o link do seu convite para continuar.');
     }
     let html;
-    if (path === '/') html = welcome() + weddingDetails();
+    if (path === '/') html = welcome();
     else if (path === '/admin/login') html = loginPage();
     else if (path === '/admin') html = await dashboard();
     else if (path === '/admin/convites') html = await invitations(page);

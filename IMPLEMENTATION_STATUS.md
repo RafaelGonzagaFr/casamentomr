@@ -73,3 +73,11 @@ Proximo incremento: editor de cores nos tokens existentes, depois dados e ferram
 Identificada apos o commit 00daf89: a variavel details era montada em settingsPage mas nao interpolada no formulario. Corrigida a inclusao dos campos do casamento e fotografias em public/app.js. tests/frontend.test.js agora verifica a existencia dos novos inputs, textareas e seletor de visibilidade no DOM. Sintaxe e 27 testes aprovados. Sem alteracao SQL; nao e necessario reaplicar migrations. Correcoes locais ainda precisam de commit/push e deploy.
 
 Ajuste de apresentacao: detalhes do casamento exibem DD/MM/AAAA - HH:mm acima do contador, sem mostrar o fuso. Calculo do contador preservado. Sem migration.
+
+## Reorganizacao visual da pagina publica
+
+public/app.js agora monta um convite continuo na rota /: identificacao, ornamento, casal, contador, data/hora, orientacao e botao do album. Removidos cartoes separados, texto de boas-vindas da abertura publica e data repetida no rodape. Informacoes opcionais (foto, locais, historia e orientacoes) continuam abaixo, no mesmo fluxo. O campo welcome_message permanece salvo e usado no convite autenticado. Acesso administrativo preservado no rodape. Album exibe somente botao, com URL validada, nova aba e rel seguro; configuracoes de titulo/descricao permanecem salvas. Sem mudancas de banco ou rotas.
+
+public/styles.css limita largura, centraliza conteudo e usa clamp, flex-wrap e quebra de textos/botao. Sem alturas fixas ou areas internas de rolagem na nova composicao; cores usam tokens existentes. Nao ha sistema dinamico de temas implementado no estado atual: nenhuma nova paleta paralela foi criada.
+
+Validacao: node scripts/check.js, node --test tests/*.test.js (28 aprovados), git diff --check. Novo tests/public-layout.test.js verifica ordem, unicidade de data/contador, detalhes opcionais, ausencia de cartoes/textos provisorios, rodape e links invalidos. Revisao estatica de CSS para celular e desktop; inspecao visual real nao executada: inventario sem navegadores e tentativa de abrir IAB retornou Browser is not available. Nao houve deploy nem migration.
