@@ -3,7 +3,8 @@ import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import QRCode from 'qrcode';
 import { result } from './supabase.js';
-import { HttpError, text, integer, id, uuid, boolean, giftData, imageData, settingsData, publicPhotos } from './validation.js';
+import { HttpError, text, integer, id, uuid, boolean, giftData, imageData, settingsData, publicPhotos, publicWedding } from './validation.js';
+import { weddingInstant } from './wedding-time.js';
 
 const publicDir = fileURLToPath(new URL('../public', import.meta.url));
 export const hash = value => createHash('sha256').update(value).digest('hex');
@@ -99,7 +100,7 @@ export function createApp(config, { db, login }) {
   app.get('/api/health', (req, res) => res.json({ ok: true }));
   app.get('/api/public', async (req, res) => {
     const data = await settings();
-    res.json({ couple_names: data.couple_names, wedding_date: data.wedding_date, photos: publicPhotos(data) });
+    res.json({ ...publicWedding(data), photos: publicPhotos(data) });
   });
   app.post('/api/admin/login', rate('login', 5), async (req, res) => {
     const email = text(req.body.email, 'E-mail');
@@ -217,7 +218,13 @@ export function createApp(config, { db, login }) {
   app.get('/api/admin/reservations', (req, res) => sendList(req, res, db.from('gift_reservations').select(reservationSelect, { count: 'exact' }).order('reserved_at', { ascending: false })));
   app.post('/api/admin/reservations/:id/cancel', async (req, res) => res.json(await mutate(req, 'reservation.cancel', { reservation_id: id(req.params.id), reason: text(req.body.reason, 'Motivo', 500, true) })));
   app.get('/api/admin/settings', async (req, res) => res.json(await settings()));
-  app.patch('/api/admin/settings', async (req, res) => res.json(await mutate(req, 'settings.update', settingsData(req.body))));
+  app.patch('/api/admin/settings', async (req, res) => {
+    const data = settingsData(req.body);
+    const merged = { ...await settings(), ...data };
+    try { weddingInstant(merged.wedding_date, merged.ceremony_time, merged.timezone || 'America/Bahia'); }
+    catch (error) { throw new HttpError(422, error.message); }
+    res.json(await mutate(req, 'settings.update', data));
+  });
   app.use('/api', (req, res) => res.status(404).json({ error: 'Rota não encontrada.' }));
   app.use(express.static(publicDir, { index: false, dotfiles: 'deny' }));
   app.get(/^\/(?:|admin(?:\/.*)?|convite(?:\/.*)?)$/, (req, res) => { res.set('Cache-Control', 'no-store'); res.sendFile(`${publicDir}/index.html`); });

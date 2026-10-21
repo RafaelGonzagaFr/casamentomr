@@ -197,3 +197,11 @@ As fotos substituídas são mantidas no bucket; faça limpeza administrativa dos
 Consulte IMPLEMENTATION_STATUS.md. Para banco existente, execute somente supabase/migrations/20261019_photographs.sql; nao reaplique schema.sql. Novas instalacoes usam schema.sql atualizado. Em Configuracoes > Fotografias, configure o link HTTPS do Google Drive, textos e visibilidade. A secao aparece na pagina inicial e no convite. As permissoes sao gerenciadas no Drive; visualizacao nao implica upload.
 
 Uma chave secreta constava anteriormente neste documento: revogue/rotacione essa chave no painel Supabase e atualize o ambiente do servidor. Os exemplos agora sao placeholders.
+
+## Configuracoes e contagem regressiva (21/10/2026)
+
+Em banco existente, aplicar as migrations 20261019_photographs.sql e 20261021_wedding_configuration.sql nessa ordem. Para instalacao vazia usar schema.sql atualizado. Nao reaplicar o schema em banco com dados.
+
+Na tela Configuracoes, informe data, horario da cerimonia e fuso IANA (padrao America/Bahia). O contador aparece na pagina inicial e no convite e muda para a mensagem configurada quando o evento inicia. Sem horario cadastrado, a data continua sendo exibida e o contador permanece oculto. Horarios ambiguos ou inexistentes em mudancas de horario de verao sao rejeitados. O prazo RSVP permanece no horario da Bahia.
+
+Configure tambem foto externa HTTPS, locais, enderecos, mapa, historia e informacoes adicionais. Os campos sao opcionais, exceto nome de exibicao e fuso no formulario. A nova versao nao faz upload de fotos dos convidados.

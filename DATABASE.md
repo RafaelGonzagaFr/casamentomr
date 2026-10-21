@@ -15,3 +15,7 @@ RLS habilitado nas tabelas; anon/authenticated sem acesso direto. service_role a
 Convites agrupam guests. invitation_tokens guarda SHA-256 e revogacao. gift_reservations possui indices unicos parciais para uma reserva ativa por convite e por presente. wedding_mutate bloqueia registros para preservar regras e atomicidade de trocas. activity_logs registra operacoes selecionadas; auditoria completa ainda pendente.
 
 Validacao local usa PGlite isolado e nao acessa Supabase remoto. A migration foi executada duas vezes no teste preservando configuracoes anteriores. Confira IMPLEMENTATION_STATUS.md para limitacoes e proximas entidades.
+
+## Migration 20261021_wedding_configuration.sql
+
+Aplicar depois de 20261019_photographs.sql. Amplia a lista permitida de chaves em wedding_mutate para os dados do casamento, usando o mesmo upsert e sem alterar tabelas/grants. Nao reaplicar migrations antigas depois desta. Novas instalacoes ja incluem os campos no schema.sql. wedding_at e derivado no backend de wedding_date, ceremony_time e timezone, sem depender do fuso do servidor; nao e armazenado separadamente.

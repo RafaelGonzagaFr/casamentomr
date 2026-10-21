@@ -1,6 +1,6 @@
 # Estado da implementacao - 19/10/2026
 
-Auditoria estatica do repositorio e testes locais. Nenhum banco remoto foi consultado ou alterado. A pasta recebida nao tem .git nem AGENTS.md. Nao e possivel atestar configuracao ou dados em producao.
+Auditoria estatica do repositorio e testes locais. Nenhum banco remoto foi consultado ou alterado. Na auditoria inicial a pasta nao tinha .git nem AGENTS.md. Em 21/10/2026 Git esta disponivel e o estado inicial deste ciclo estava limpo. Nao e possivel atestar configuracao ou dados em producao.
 
 ## Arquitetura encontrada
 
@@ -10,8 +10,8 @@ HTML/CSS/JavaScript sem compilacao; Express 5.1.0; Node >=22.9; Supabase JS 2.76
 
 | Modulo | Funcionalidade | Situacao | O que falta | Arquivos envolvidos | Prioridade |
 |---|---|---|---|---|---|
-| A | Configuracoes do casal | Parcialmente implementada | Nomes individuais, foto externa, hora, fuso, locais, historia e informacoes adicionais | public/app.js, server/validation.js, supabase/schema.sql | Alta |
-| A | Contagem regressiva | Ausente | Data com hora/fuso, contador e mensagem apos evento | public/app.js | Alta |
+| A | Configuracoes do casal | Depende de configuracao externa | Campos, validacao, persistencia e exibicao implementados; aplicar migration 20261021 e validar Supabase real/visual | public/app.js, server/validation.js, supabase/schema.sql | Alta |
+| A | Contagem regressiva | Depende de configuracao externa | Implementada e testada em DOM; configurar data/hora/fuso e validar visualmente | public/app.js | Alta |
 | B | Personalizacao | Ausente | Geracao de paleta, contraste, editor e persistencia; reutilizar tokens --rose/--border/--muted | public/styles.css | Media |
 | C | Convidados | Parcialmente implementada | Existem nomes por convite e exclusao logica; faltam contato, categorias, busca, filtros e CSV | public/app.js, server/app.js, supabase/schema.sql | Alta |
 | D | RSVP | Parcialmente implementada | Individual por convite com prazo e persistencia; falta email/ativacao e edicao administrativa na interface | mesmos arquivos | Alta |
@@ -57,3 +57,13 @@ Sem configuracao Supabase real, persistencia remota, email, permissoes de Drive 
 ## Validacao deste ciclo
 
 Node 24.21.0. npm ci --ignore-scripts concluido, auditoria npm: zero vulnerabilidades reportadas. node scripts/check.js aprovado. node --test tests/*.test.js: 24 testes aprovados, incluindo migration reaplicavel, preservacao de configuracoes, autorizacao da RPC, visibilidade publica e URLs do Drive. Suite existente de frontend, HTTP, banco e validacao aprovada. Nao houve teste visual em navegador, deploy nem aplicacao da migration em Supabase remoto.
+
+## Incremento de 21/10/2026 - configuracoes e contador
+
+Ampliada a tela existente com nomes individuais, foto externa HTTPS, hora, fuso IANA, locais/enderecos, mapa HTTPS, historia, informacoes adicionais e mensagem apos inicio. Restaurados campos de fotografias ausentes na tela recebida neste ciclo. A API publica seleciona campos explicitamente e calcula wedding_at no servidor. Contador na pagina inicial e no convite mostra dias/horas/minutos/segundos e encerra o timer ao mudar de pagina ou iniciar o casamento. Sem data e hora completas, nao presume meia-noite. Horarios ambiguos/inexistentes sao rejeitados. O prazo RSVP continua no horario da Bahia para preservar o comportamento atual.
+
+Criados server/wedding-time.js, tests/wedding-time.test.js, tests/countdown.test.js e supabase/migrations/20261021_wedding_configuration.sql. Modificados public/app.js, public/styles.css, server/app.js, server/validation.js, supabase/schema.sql, tests/photographs.test.js e documentacao. Sem novas dependencias, tabelas ou exclusao de dados. Migration substitui a RPC existente mantendo assinatura e autorizacao. Aplicar migrations em ordem cronologica antes de publicar o backend novo.
+
+Validacao: node scripts/check.js aprovado; node --test tests/*.test.js com 27 testes aprovados. Inclui migration aplicada duas vezes, preservacao de configuracoes, persistencia/publicacao dos novos campos, fusos com offsets fracionarios, horario de verao, validacao de URLs e transicao do contador com escape da mensagem final. Suite anterior de RSVP/reservas/autorizacao/frontend segue aprovada. Sem build/lint/TypeScript configurados. Supabase real, deploy e inspecao visual em navegador nao executados.
+
+Proximo incremento: editor de cores nos tokens existentes, depois dados e ferramentas de convidados.

@@ -9,3 +9,7 @@ Leituras usam SDK Supabase. Escritas de negocio usam wedding_mutate, uma RPC Pos
 Fotografias de convidados sao somente links externos do Google Drive. Fotos dos presentes continuam no bucket wedding-gifts. Nao ha nova integracao OAuth, sincronizacao nem upload de fotos dos convidados.
 
 A arquitetura foi preservada. Migracao para Next.js/React e modelo multi-casamento requerem proposta especifica e aprovacao antes de alteracoes substanciais. Veja IMPLEMENTATION_STATUS.md.
+
+## Horario do casamento
+
+server/wedding-time.js resolve data e hora locais em fuso IANA para UTC por Intl, incluindo offsets fracionarios e variacoes sazonais. Horarios inexistentes/ambiguos sao rejeitados na API. publicWedding seleciona os campos publicos e inclui wedding_at. O frontend atualiza o contador a cada segundo e limpa o intervalo em navegacao e ao atingir o inicio. O RSVP conserva o contrato anterior em America/Bahia.

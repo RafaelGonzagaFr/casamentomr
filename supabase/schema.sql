@@ -219,7 +219,7 @@ begin
    values('ADMIN_USER',p_admin::text,'gift_reservation.cancelled','GiftReservation',row_id,
     jsonb_build_object('gift_id',reservation.gift_id,'invitation_id',reservation.invitation_id,'reason',p_data->>'reason'));
  when 'settings.update' then
-  foreach setting_key in array array['couple_names','wedding_date','rsvp_deadline_at','welcome_message','photos_drive_url','photos_title','photos_description','photos_button','photos_visible'] loop
+  foreach setting_key in array array['couple_names','wedding_date','rsvp_deadline_at','welcome_message','photos_drive_url','photos_title','photos_description','photos_button','photos_visible','partner_one_name','partner_two_name','ceremony_time','timezone','ceremony_location','ceremony_address','reception_location','reception_address','hero_image_url','maps_url','wedding_story','additional_information','started_message'] loop
    if p_data ? setting_key then
     insert into public.wedding_settings(key,value) values(setting_key,p_data->>setting_key)
     on conflict(key) do update set value=excluded.value,updated_at=now();

@@ -1,3 +1,5 @@
+import { weddingInstant } from './wedding-time.js';
+
 export class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
@@ -69,11 +71,35 @@ export function settingsData(body) {
   }
   if (data.photos_drive_url) data.photos_drive_url = driveUrl(data.photos_drive_url);
   if (body.photos_visible !== undefined) data.photos_visible = String(boolean(body.photos_visible));
+  for (const key of ['partner_one_name','partner_two_name','ceremony_location','ceremony_address','reception_location','reception_address','hero_image_url','maps_url','wedding_story','additional_information','started_message']) {
+    if (body[key] !== undefined) data[key] = text(body[key], key, ['wedding_story','additional_information'].includes(key) ? 5000 : key.endsWith('_url') ? 2048 : 500, true);
+  }
+  for (const key of ['hero_image_url','maps_url']) if (data[key]) {
+    let url; try { url = new URL(data[key]); } catch { throw new HttpError(422, 'URL externa inválida.'); }
+    if (url.protocol !== 'https:' || url.username || url.password) throw new HttpError(422, 'Use uma URL HTTPS sem credenciais.');
+    data[key] = url.href;
+  }
+  if (body.ceremony_time !== undefined) {
+    data.ceremony_time = body.ceremony_time || null;
+    if (data.ceremony_time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(data.ceremony_time)) throw new HttpError(422, 'Horário da cerimônia inválido.');
+  }
+  if (body.timezone !== undefined) {
+    data.timezone = text(body.timezone, 'Fuso horário', 100);
+    try { new Intl.DateTimeFormat('pt-BR', { timeZone: data.timezone }); } catch { throw new HttpError(422, 'Fuso horário inválido.'); }
+  }
   if (data.wedding_date && (!/^\d{4}-\d{2}-\d{2}$/.test(data.wedding_date) || Number.isNaN(Date.parse(data.wedding_date)) || new Date(data.wedding_date).toISOString().slice(0, 10) !== data.wedding_date)) throw new HttpError(422, 'Data do casamento inválida.');
   if (data.rsvp_deadline_at) {
     if (typeof data.rsvp_deadline_at !== 'string' || !/(Z|[+-]\d{2}:\d{2})$/.test(data.rsvp_deadline_at) || Number.isNaN(Date.parse(data.rsvp_deadline_at))) throw new HttpError(422, 'Prazo inválido: informe data, hora e fuso.');
     data.rsvp_deadline_at = new Date(data.rsvp_deadline_at).toISOString();
   }
+  return data;
+}
+
+export function publicWedding(settings) {
+  const keys = ['partner_one_name','partner_two_name','couple_names','wedding_date','ceremony_time','timezone','ceremony_location','ceremony_address','reception_location','reception_address','hero_image_url','maps_url','wedding_story','welcome_message','additional_information','started_message'];
+  const data = Object.fromEntries(keys.map(key => [key, settings[key] || null]));
+  data.timezone ||= 'America/Bahia';
+  try { data.wedding_at = weddingInstant(data.wedding_date, data.ceremony_time, data.timezone); } catch { data.wedding_at = null; }
   return data;
 }
 
