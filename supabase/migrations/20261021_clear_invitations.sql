@@ -14,10 +14,10 @@ begin
   public.gift_reservations, public.app_sessions in access exclusive mode;
  select count(*) into total from public.invitations;
  delete from public.app_sessions where invitation_id is not null;
- delete from public.gift_reservations;
- delete from public.guests;
- delete from public.invitation_tokens;
- delete from public.invitations;
+ delete from public.gift_reservations where id is not null;
+ delete from public.guests where id is not null;
+ delete from public.invitation_tokens where id is not null;
+ delete from public.invitations where id is not null;
  insert into public.activity_logs(actor_type,actor_id,action,entity_type,metadata)
  values('ADMIN_USER',p_admin::text,'invitations.cleared','Invitation',jsonb_build_object('invitations_deleted',total));
  return jsonb_build_object('deleted',total);
@@ -25,4 +25,5 @@ end;
 $$;
 revoke all on function public.wedding_clear_invitations(uuid,text) from public,anon,authenticated;
 grant execute on function public.wedding_clear_invitations(uuid,text) to service_role;
+notify pgrst, 'reload schema';
 commit;

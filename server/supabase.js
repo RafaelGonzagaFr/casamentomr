@@ -48,6 +48,10 @@ export async function result(query) {
       message: error.message
     });
 
+    if (['PGRST202', '42883'].includes(error.code)) {
+      throw new HttpError(503, 'Função do banco indisponível. Execute a migration correspondente no mesmo projeto Supabase usado pelo aplicativo e atualize o cache da API.');
+    }
+
     if (error.code === 'P0001') {
       throw new HttpError(422, error.message);
     }
@@ -76,7 +80,7 @@ export async function result(query) {
 
     throw new HttpError(
       503,
-      'Não foi possível consultar o banco. Verifique a configuração do Supabase.'
+      `Não foi possível consultar o banco${error.code ? ` (código ${String(error.code).replace(/[^A-Za-z0-9]/g, '').slice(0, 20)})` : ''}. Consulte o erro nos logs do servidor.`
     );
   }
 

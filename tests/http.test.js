@@ -1,6 +1,7 @@
 import { before,after,beforeEach,test } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
+import { readFile } from 'node:fs/promises';
 import { createApp,hash } from '../server/app.js';
 import { HttpError } from '../server/validation.js';
 import { createDatabase,reset,testAdapter,family,gift,ADMIN } from './helpers.js';
@@ -8,6 +9,11 @@ let db,server,base,config;
 const PASSWORD=' senha preservada ';
 const allowedUser={id:ADMIN};
 test('limpeza exige admin e confirmação e remove vínculos preservando catálogo e sessão admin',async () => {
+ const migration=await readFile(new URL('../supabase/migrations/20261022_fix_clear_invitations_where.sql',import.meta.url),'utf8');
+ // Embedded PostgreSQL does not include Supabase's safe-update extension.
+ // Check every DELETE has a predicate, then execute and reapply the real migration.
+ for(const statement of migration.match(/delete\s+from[^;]+;/gi)||[]) assert.match(statement,/\bwhere\b/i);
+ await db.exec(migration);await db.exec(migration);
  const admin=client();await admin.login();
  const inv=await family(db,'Teste de limpeza');const item=await gift(db,'Presente preservado');
  const issued=await token(admin,inv.id);const guest=client();await guest.enter(issued.url);
