@@ -67,3 +67,7 @@ Criados server/wedding-time.js, tests/wedding-time.test.js, tests/countdown.test
 Validacao: node scripts/check.js aprovado; node --test tests/*.test.js com 27 testes aprovados. Inclui migration aplicada duas vezes, preservacao de configuracoes, persistencia/publicacao dos novos campos, fusos com offsets fracionarios, horario de verao, validacao de URLs e transicao do contador com escape da mensagem final. Suite anterior de RSVP/reservas/autorizacao/frontend segue aprovada. Sem build/lint/TypeScript configurados. Supabase real, deploy e inspecao visual em navegador nao executados.
 
 Proximo incremento: editor de cores nos tokens existentes, depois dados e ferramentas de convidados.
+
+## Correcao da renderizacao de Configuracoes
+
+Identificada apos o commit 00daf89: a variavel details era montada em settingsPage mas nao interpolada no formulario. Corrigida a inclusao dos campos do casamento e fotografias em public/app.js. tests/frontend.test.js agora verifica a existencia dos novos inputs, textareas e seletor de visibilidade no DOM. Sintaxe e 27 testes aprovados. Sem alteracao SQL; nao e necessario reaplicar migrations. Correcoes locais ainda precisam de commit/push e deploy.

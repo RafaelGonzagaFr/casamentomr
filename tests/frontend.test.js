@@ -43,6 +43,11 @@ try{
  await guest.click('button[data-method="DELETE"]');await wait(()=>guest.doc.querySelector('#main')?.textContent.includes('Você ainda não escolheu um presente.'));
  await admin.click('a[href="/admin/convites/1"]');await wait(()=>admin.doc.querySelector('h1')?.textContent==='Família Teste');
  await admin.click('a[href="/admin/configuracoes"]');await wait(()=>admin.doc.querySelector('input[name="couple_names"]'));
+ for (const name of ['partner_one_name','partner_two_name','ceremony_time','timezone','hero_image_url','maps_url','ceremony_location','ceremony_address','reception_location','reception_address','started_message','photos_drive_url','photos_title','photos_button']) {
+  assert.ok(admin.doc.querySelector(`input[name="${name}"]`), `Campo de configuração ausente: ${name}`);
+ }
+ for (const name of ['wedding_story','additional_information','photos_description']) assert.ok(admin.doc.querySelector(`textarea[name="${name}"]`));
+ assert.ok(admin.doc.querySelector('select[name="photos_visible"]'));
  await admin.submit('form[data-endpoint="/admin/settings"]',{couple_names:'Rafael & Maria',wedding_date:'2027-03-20',rsvp_deadline_at:'2027-03-10T20:00',welcome_message:'Bem-vindos!'});await wait(()=>admin.doc.querySelector('#notice').textContent==='Configurações salvas.');
  await admin.click('a[href="/admin/presentes"]');await wait(()=>admin.doc.querySelector('form[data-endpoint="/admin/gifts"]'));
  await admin.submit('form[data-endpoint="/admin/gifts"]',{name:'<script>alert(1)</script>',category_id:1,sort_order:0});await wait(()=>admin.doc.querySelector('h2')?.textContent==='Novo presente'&&admin.doc.querySelector('article h2')?.textContent==='<script>alert(1)</script>');assert.equal(admin.doc.querySelectorAll('article script').length,0);
