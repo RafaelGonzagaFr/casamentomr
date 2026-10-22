@@ -132,7 +132,7 @@ export function createApp(config, { db, login }) {
     const [guests, config] = await Promise.all([
       result(db.from('guests').select('id,name,rsvp_status').eq('invitation_id', req.invitation.id).is('deleted_at', null).order('id')), settings(),
     ]);
-    res.json({ invitation: req.invitation, guests, settings: config, session: sessionInfo(req), public: { ...publicWedding(config), photos: publicPhotos(config) } });
+    res.json({ invitation: req.invitation, guests, settings: config, session: sessionInfo(req), public: { ...publicWedding(config, true), photos: publicPhotos(config) } });
   });
   app.patch('/api/guest/guests/:id/rsvp', rate('rsvp', 30), async (req, res) => {
     if (!['PENDING','ATTENDING','DECLINED'].includes(req.body.rsvp_status)) throw new HttpError(422, 'Confirmação inválida.');

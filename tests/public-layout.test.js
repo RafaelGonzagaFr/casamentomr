@@ -9,7 +9,7 @@ test('public invitation keeps content order, one date/countdown and safe album a
   const dom = new JSDOM(html,{runScripts:'outside-only'});
   try {
     dom.window.eval(`${source.slice(0,source.indexOf('function loginPage()'))}
-      publicInfo = {couple_names:'Maria & Rafael',wedding_date:'2027-03-20',ceremony_time:'18:30',timezone:'America/Bahia',welcome_message:'Olá',wedding_story:'Nossa história',photos:{url:'https://drive.google.com/drive/folders/abc',title:'Não mostrar',description:'Não mostrar',button:'Acessar álbum de fotografias'}};
+      publicInfo = {couple_names:'Maria & Rafael',wedding_date:'2027-03-20',ceremony_time:'18:30',timezone:'America/Bahia',additional_information:'Orientacoes exclusivas do convite',welcome_message:'Olá',wedding_story:'Nossa história',photos:{url:'https://drive.google.com/drive/folders/abc',title:'Não mostrar',description:'Não mostrar',button:'Acessar álbum de fotografias'}};
       layout('/'); main.innerHTML = welcome();
       window.renderPhotos = photos => { publicInfo.photos = photos; main.innerHTML = welcome(); };`);
     const doc = dom.window.document;
@@ -27,7 +27,7 @@ test('public invitation keeps content order, one date/countdown and safe album a
     assert.equal((doc.body.textContent.match(/20\/03\/2027/g)||[]).length,1);
     assert.equal(article.querySelector('.wedding-date').textContent,'20/03/2027 - 18:30');
     assert.doesNotMatch(article.textContent,/America\/Bahia|Olá|Não mostrar|Serviço externo/);
-    assert.match(article.textContent,/Nossa história/);
+    assert.doesNotMatch(article.textContent,/Nossa história|Orientacoes exclusivas do convite/);
     assert.equal(doc.querySelector('a[href="/admin/login"]'),null);
     for (const photos of [null,{url:'javascript:alert(1)'},{url:'https://drive.google.com.evil.test'}]) {
       dom.window.renderPhotos(photos);

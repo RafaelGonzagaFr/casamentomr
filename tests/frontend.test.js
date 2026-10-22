@@ -8,7 +8,7 @@ import { HttpError } from '../server/validation.js';
 import { createDatabase,testAdapter,family,gift,mutate,ADMIN } from './helpers.js';
 test('frontend executa login, QR, RSVP, reserva, troca, cancelamento e configuração com escape HTML',async () => {
 const db=await createDatabase();const fixture=await family(db,'Família Teste','PENDING');await gift(db,'Cafeteira');await gift(db,'Panelas');
-await mutate(db,'settings.update',{welcome_message:'Uma mensagem especial para vocês',wedding_date:'2099-03-20',ceremony_time:'18:30',timezone:'America/Bahia',rsvp_deadline_at:'2099-03-10T23:00:00Z'});
+await mutate(db,'settings.update',{additional_information:'Orientacoes exclusivas do convite',welcome_message:'Uma mensagem especial para vocês',wedding_date:'2099-03-20',ceremony_time:'18:30',timezone:'America/Bahia',rsvp_deadline_at:'2099-03-10T23:00:00Z'});
 const config={origin:'http://127.0.0.1:3000',production:false,bucket:'wedding-gifts'};
 const server=createApp(config,{db:testAdapter(db),login:async(email,password)=>{if(email==='admin@example.test'&&password==='123456789')return{id:ADMIN};throw new HttpError(401,'Inválido');}}).listen(0,'127.0.0.1');
 await once(server,'listening');config.origin=`http://127.0.0.1:${server.address().port}`;
@@ -39,6 +39,7 @@ try{
  guest.window.history.pushState(null,'','/convite');guest.window.dispatchEvent(new guest.window.PopStateEvent('popstate'));await wait(()=>guest.doc.querySelector('select[name="rsvp_status"]'));
  assert.equal(guest.doc.querySelector('#main h1').textContent,'Família Teste');
  assert.equal(guest.doc.querySelectorAll('#main h1').length,1);
+ assert.match(guest.doc.querySelector('.guest-invitation').textContent,/Orientacoes exclusivas do convite/);
  assert.equal(guest.doc.querySelector('.guest-invitation>.eyebrow'),null);
  assert.equal(guest.doc.querySelector('.invitation-message').textContent,'Uma mensagem especial para vocês');
  assert.equal(guest.doc.querySelector('.guest-invitation>.wedding-date').textContent,'Dia da cerimônia: 20/03/2099 - 18:30');
@@ -67,10 +68,11 @@ try{
  await guest.click('button[data-method="DELETE"]');await wait(()=>guest.doc.querySelector('#main')?.textContent.includes('Você ainda não escolheu um presente.'));
  await admin.click('a[href="/admin/convites/1"]');await wait(()=>admin.doc.querySelector('h1')?.textContent==='Família Teste');
  await admin.click('a[href="/admin/configuracoes"]');await wait(()=>admin.doc.querySelector('input[name="couple_names"]'));
- for (const name of ['partner_one_name','partner_two_name','ceremony_time','timezone','hero_image_url','maps_url','ceremony_location','ceremony_address','reception_location','reception_address','started_message','photos_drive_url','photos_title','photos_button']) {
+ for (const name of ['ceremony_time','timezone','maps_url','ceremony_location','started_message','photos_drive_url','photos_title','photos_button']) {
   assert.ok(admin.doc.querySelector(`input[name="${name}"]`), `Campo de configuração ausente: ${name}`);
  }
- for (const name of ['wedding_story','additional_information','photos_description']) assert.ok(admin.doc.querySelector(`textarea[name="${name}"]`));
+ for (const name of ['additional_information','photos_description']) assert.ok(admin.doc.querySelector(`textarea[name="${name}"]`));
+ for (const name of ['partner_one_name','partner_two_name','hero_image_url','ceremony_address','reception_location','reception_address','wedding_story']) assert.equal(admin.doc.querySelector(`[name="${name}"]`),null);
  assert.ok(admin.doc.querySelector('select[name="photos_visible"]'));
  await admin.submit('form[data-endpoint="/admin/settings"]',{couple_names:'Rafael & Maria',wedding_date:'2027-03-20',rsvp_deadline_at:'2027-03-10T20:00',welcome_message:'Bem-vindos!'});await wait(()=>admin.doc.querySelector('#notice').textContent==='Configurações salvas.');
  await admin.click('a[href="/admin/presentes"]');await wait(()=>admin.doc.querySelector('form[data-endpoint="/admin/gifts"]'));

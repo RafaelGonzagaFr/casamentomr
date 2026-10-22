@@ -95,8 +95,9 @@ export function settingsData(body) {
   return data;
 }
 
-export function publicWedding(settings) {
-  const keys = ['partner_one_name','partner_two_name','couple_names','wedding_date','ceremony_time','timezone','ceremony_location','ceremony_address','reception_location','reception_address','hero_image_url','maps_url','wedding_story','welcome_message','additional_information','started_message'];
+export function publicWedding(settings, includeAdditional = false) {
+  const keys = ['couple_names','wedding_date','ceremony_time','timezone','ceremony_location','maps_url','welcome_message','started_message'];
+  if (includeAdditional) keys.push('additional_information');
   const data = Object.fromEntries(keys.map(key => [key, settings[key] || null]));
   data.timezone ||= 'America/Bahia';
   try { data.wedding_at = weddingInstant(data.wedding_date, data.ceremony_time, data.timezone); } catch { data.wedding_at = null; }

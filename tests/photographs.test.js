@@ -19,7 +19,7 @@ test('migration preserva dados, persiste fotografias e API respeita visibilidade
  server=createApp({origin:'http://localhost:3000',bucket:'wedding-gifts'},{db:testAdapter(db)}).listen(0,'127.0.0.1');
  await once(server,'listening'); const url='http://127.0.0.1:'+server.address().port+'/api/public';
  let data=await (await fetch(url)).json();
- assert.equal(data.wedding_at,'2027-03-20T21:30:00.000Z');assert.equal(data.ceremony_location,'Igreja');assert.equal(data.wedding_story,'Nossa historia');
+ assert.equal(data.wedding_at,'2027-03-20T21:30:00.000Z');assert.equal(data.ceremony_location,'Igreja');assert.equal(data.wedding_story,undefined);
  assert.equal(data.couple_names,'Casal preservado');assert.equal(data.photos.title,settings.photos_title);assert.equal(data.photos.url,settings.photos_drive_url);assert.equal(data.guest_limit,undefined);
  await mutate(db,'settings.update',{photos_visible:'false'});data=await (await fetch(url)).json();assert.equal(data.photos,null);
  } finally {if(server)await new Promise(resolve=>server.close(resolve));await db.close();}
