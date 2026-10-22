@@ -8,6 +8,20 @@ import { createDatabase,reset,testAdapter,family,gift,ADMIN } from './helpers.js
 let db,server,base,config;
 const PASSWORD=' senha preservada ';
 const allowedUser={id:ADMIN};
+test('administrador abre link emitido sem gerar outro token e respeita revogação e vínculo',async () => {
+ const admin=client();await admin.login();const a=await family(db),b=await family(db,'Outra familia');
+ await token(admin,a.id);
+ const row=(await db.query('select id from public.invitation_tokens where invitation_id=$1',[a.id])).rows[0];
+ const path=`/api/admin/invitations/${a.id}/tokens/${row.id}/open`;
+ assert.equal((await client().request(path,'POST')).status,401);
+ assert.equal((await admin.request(`/api/admin/invitations/${b.id}/tokens/${row.id}/open`,'POST')).status,404);
+ await db.query('update public.invitation_tokens set revoked_at=now() where id=$1',[row.id]);
+ assert.equal((await admin.request(path,'POST')).status,404);
+ await db.query('update public.invitation_tokens set revoked_at=null where id=$1',[row.id]);
+ assert.equal((await admin.request(path,'POST')).status,200);
+ const session=await admin.request('/api/session');assert.equal(session.data.role,'guest');assert.equal(session.data.invitation.id,a.id);
+ assert.equal((await db.query('select count(*)::int n from public.invitation_tokens')).rows[0].n,1);
+});
 test('respostas combinadas isolam reserva e sessão por convite e não usam cache',async () => {
  const admin=client();await admin.login();
  const a=await family(db,'Familia A'),b=await family(db,'Familia B');const item=await gift(db);

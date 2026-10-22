@@ -189,6 +189,16 @@ export function createApp(config, { db, login }) {
     const qr = await QRCode.toDataURL(url, { width: 360, margin: 4, errorCorrectionLevel: 'M' });
     res.json({ url, qr });
   });
+  app.post('/api/admin/invitations/:id/tokens/:tokenId/open', async (req, res) => {
+    const invitationId = id(req.params.id);
+    const [invitation, token] = await Promise.all([
+      result(db.from('invitations').select('id').eq('id', invitationId).eq('is_active', true).is('deleted_at', null).maybeSingle()),
+      result(db.from('invitation_tokens').select('id,invitation_id,expires_at').eq('id', id(req.params.tokenId)).eq('invitation_id', invitationId).is('revoked_at', null).maybeSingle()),
+    ]);
+    if (!invitation || !token || (token.expires_at && Date.parse(token.expires_at) <= Date.now())) throw new HttpError(404, 'Link revogado, expirado ou convite inativo.');
+    await newSession(req, res, { invitation_id: invitationId, invitation_token_id: token.id }, 7 * 24 * 3600);
+    res.json({ ok: true });
+  });
   app.delete('/api/admin/invitations/:id/tokens/:tokenId', async (req, res) => res.json(await mutate(req, 'token.revoke', { token_id: id(req.params.tokenId) }, id(req.params.id))));
   app.post('/api/admin/invitations/:id/guests', async (req, res) => res.status(201).json(await mutate(req, 'guest.create', { name: text(req.body.name, 'Nome') }, id(req.params.id))));
   app.patch('/api/admin/invitations/:id/guests/:guestId', async (req, res) => res.json(await mutate(req, 'guest.update', { guest_id: id(req.params.guestId), name: text(req.body.name, 'Nome') }, id(req.params.id))));
