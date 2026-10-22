@@ -35,6 +35,10 @@ try{
  await admin.click('a[href="/admin/convites/1"]');await wait(()=>admin.doc.querySelector('button[data-action="issue-token"]'));
  await admin.click('button[data-action="issue-token"]');await wait(()=>admin.doc.querySelector('#invite-url'));
  const invite=admin.doc.querySelector('#invite-url').value;
+ const openInvite=admin.doc.querySelector('[data-open-invite]');
+ assert.equal(openInvite.href,invite);
+ assert.equal(openInvite.target,'_blank');
+ assert.equal(openInvite.rel,'noopener noreferrer');
  const guest=await page('/');const response=await guest.window.fetch(invite);assert.equal(response.status,303);
  guest.window.history.pushState(null,'','/convite');guest.window.dispatchEvent(new guest.window.PopStateEvent('popstate'));await wait(()=>guest.doc.querySelector('select[name="rsvp_status"]'));
  assert.equal(guest.doc.querySelector('#main h1').textContent,'Família Teste');
