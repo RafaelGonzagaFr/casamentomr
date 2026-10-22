@@ -71,6 +71,7 @@ try{
  assert.ok(admin.doc.querySelector('select[name="photos_visible"]'));
  await admin.submit('form[data-endpoint="/admin/settings"]',{couple_names:'Rafael & Maria',wedding_date:'2027-03-20',rsvp_deadline_at:'2027-03-10T20:00',welcome_message:'Bem-vindos!'});await wait(()=>admin.doc.querySelector('#notice').textContent==='Configurações salvas.');
  await admin.click('a[href="/admin/presentes"]');await wait(()=>admin.doc.querySelector('form[data-endpoint="/admin/gifts"]'));
+ assert.equal(admin.doc.querySelector('input[type="file"]'),null);
  await admin.submit('form[data-endpoint="/admin/gifts"]',{name:'<script>alert(1)</script>',category_id:1,sort_order:0});await wait(()=>admin.doc.querySelector('h2')?.textContent==='Novo presente'&&admin.doc.querySelector('article h2')?.textContent==='<script>alert(1)</script>');assert.equal(admin.doc.querySelectorAll('article script').length,0);
  await admin.click('a[href="/admin/convites"]');await wait(()=>admin.doc.querySelector('form[data-method="DELETE"][data-endpoint="/admin/invitations"]'));
  await admin.submit('form[data-method="DELETE"][data-endpoint="/admin/invitations"]',{confirmation:'EXCLUIR TODOS'});

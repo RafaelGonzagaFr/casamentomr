@@ -117,7 +117,7 @@ async function categories() {
   return `${heading('Categorias','Organize os presentes por ambiente ou tipo.')}<section class="card">${form('/admin/categories','POST','Categoria criada.',`${field('Nova categoria','name','','text','required maxlength="255"')}${field('Ordem','sort_order',0,'number','required')}${submit('Adicionar')}`,{class:'form-grid'})}</section><div class="stack spaced">${data.map(category => `<section class="card">${form(`/admin/categories/${category.id}`,'PATCH','Categoria atualizada.',`${field('Nome','name',category.name,'text','required maxlength="255"')}${field('Ordem','sort_order',category.sort_order,'number','required')}${submit('Salvar')}`,{class:'form-grid'})}<div class="actions">${action('Arquivar',`/admin/categories/${category.id}`,'DELETE','Arquivar esta categoria? Ela precisa estar sem presentes.','Categoria arquivada.')}</div></section>`).join('') || empty('Nenhuma categoria cadastrada.')}</div>`;
 }
 function giftFields(gift, categories, reserved = false) {
-  return `${field('Nome','name',gift?.name || '','text',`maxlength="255" ${reserved ? 'disabled' : 'required'}`)}<label><span class="label">Categoria</span><select name="category_id" class="input" required><option value="">Selecione</option>${categories.map(cat => `<option value="${cat.id}"${selected(cat.id,gift?.category_id)}>${e(cat.name)}</option>`).join('')}</select></label>${textarea('Descrição','description',gift?.description)}${field('Link de referência','external_url',gift?.external_url || '','url','maxlength="2048"')}${field(gift ? 'Nova imagem (opcional, até 2 MB)' : 'Imagem (opcional, até 2 MB)','image','','file','accept="image/png,image/jpeg,image/webp"')}${field('Valor estimado (opcional)','estimated_price',gift?.estimated_price ?? '','number','min="0" max="99999999.99" step="0.01"')}${field('Ordem na lista','sort_order',gift?.sort_order ?? 0,'number','required')}<label><span class="label">Situação</span><select class="input" name="is_active"><option value="true"${selected(gift?.is_active ?? true,true)}>Ativo</option><option value="false"${selected(gift?.is_active,false)}>Desativado</option></select></label><div class="full">${submit(gift ? 'Salvar alterações' : 'Cadastrar presente')}</div>`;
+  return `${field('Nome','name',gift?.name || '','text',`maxlength="255" ${reserved ? 'disabled' : 'required'}`)}<label><span class="label">Categoria</span><select name="category_id" class="input" required><option value="">Selecione</option>${categories.map(cat => `<option value="${cat.id}"${selected(cat.id,gift?.category_id)}>${e(cat.name)}</option>`).join('')}</select></label>${textarea('Descrição','description',gift?.description)}${field('Link de referência','external_url',gift?.external_url || '','url','maxlength="2048"')}${field('Valor estimado (opcional)','estimated_price',gift?.estimated_price ?? '','number','min="0" max="99999999.99" step="0.01"')}${field('Ordem na lista','sort_order',gift?.sort_order ?? 0,'number','required')}<label><span class="label">Situação</span><select class="input" name="is_active"><option value="true"${selected(gift?.is_active ?? true,true)}>Ativo</option><option value="false"${selected(gift?.is_active,false)}>Desativado</option></select></label><div class="full">${submit(gift ? 'Salvar alterações' : 'Cadastrar presente')}</div>`;
 }
 async function adminGifts(page) {
   const [data, cats] = await Promise.all([api(`/admin/gifts?page=${page}`),api('/admin/categories')]);
@@ -212,12 +212,6 @@ function busy(element, value) {
     else { button.disabled = false; button.textContent = button.dataset.originalText || button.textContent; }
   }
 }
-async function filePayload(file) {
-  if (!file?.size) return null;
-  if (file.size > 2097152 || !['image/png','image/jpeg','image/webp'].includes(file.type)) throw new Error('Use uma imagem PNG, JPEG ou WebP de até 2 MB.');
-  const base64 = await new Promise((resolve,reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.onerror = () => reject(new Error('Não foi possível ler a imagem.')); reader.readAsDataURL(file); });
-  return { type: file.type, base64 };
-}
 document.addEventListener('submit', async event => {
   const element = event.target;
   if (!element.matches('#login-form,form[data-endpoint]')) return;
@@ -226,7 +220,6 @@ document.addEventListener('submit', async event => {
   busy(element,true);
   try {
     const fields = new FormData(element); const body = Object.fromEntries(fields);
-    if (fields.has('image')) { const image = await filePayload(fields.get('image')); delete body.image; if (image) body.image = image; }
     if (element.id === 'login-form') {
       await api('/admin/login','POST',body); await navigate('/admin'); return;
     }
