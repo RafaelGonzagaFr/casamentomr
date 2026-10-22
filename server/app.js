@@ -1,7 +1,6 @@
 import express from 'express';
 import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import QRCode from 'qrcode';
 import { result } from './supabase.js';
 import { HttpError, text, integer, id, uuid, boolean, giftData, imageData, settingsData, publicPhotos, publicWedding } from './validation.js';
 import { weddingInstant } from './wedding-time.js';
@@ -71,8 +70,10 @@ export function createApp(config, { db, login }) {
         if (!admin) throw new HttpError(401, 'Acesso administrativo encerrado.');
         req.admin = admin;
       } else {
-        const inv = await result(db.from('invitations').select('*').eq('id', session.invitation_id).eq('is_active', true).is('deleted_at', null).maybeSingle());
-        const token = await result(db.from('invitation_tokens').select('id,invitation_id,expires_at').eq('id', session.invitation_token_id).is('revoked_at', null).maybeSingle());
+        const [inv, token] = await Promise.all([
+          result(db.from('invitations').select('id,name,max_guests,is_active').eq('id', session.invitation_id).eq('is_active', true).is('deleted_at', null).maybeSingle()),
+          result(db.from('invitation_tokens').select('id,invitation_id,expires_at').eq('id', session.invitation_token_id).is('revoked_at', null).maybeSingle()),
+        ]);
         if (!inv || !token || token.invitation_id !== inv.id || (token.expires_at && Date.parse(token.expires_at) <= Date.now())) throw new HttpError(401, 'Este convite foi revogado ou está inativo.');
         req.invitation = inv;
       }
@@ -122,7 +123,8 @@ export function createApp(config, { db, login }) {
     await newSession(req, res, { invitation_id: inv.id, invitation_token_id: token.id }, 7 * 24 * 3600);
     res.redirect(303, '/convite');
   });
-  app.get('/api/session', loadSession, async (req, res) => res.json({ csrf_token: req.session.csrf_token, role: req.admin ? 'admin' : 'guest', admin: req.admin, invitation: req.invitation }));
+  const sessionInfo = req => ({ csrf_token: req.session.csrf_token, role: req.admin ? 'admin' : 'guest', admin: req.admin, invitation: req.invitation });
+  app.get('/api/session', loadSession, async (req, res) => res.json(sessionInfo(req)));
   app.post('/api/logout', loadSession, async (req, res) => { await destroySession(req, res); res.json({ ok: true }); });
 
   app.use('/api/guest', loadSession, guestOnly);
@@ -130,7 +132,7 @@ export function createApp(config, { db, login }) {
     const [guests, config] = await Promise.all([
       result(db.from('guests').select('id,name,rsvp_status').eq('invitation_id', req.invitation.id).is('deleted_at', null).order('id')), settings(),
     ]);
-    res.json({ invitation: req.invitation, guests, settings: config });
+    res.json({ invitation: req.invitation, guests, settings: config, session: sessionInfo(req), public: { ...publicWedding(config), photos: publicPhotos(config) } });
   });
   app.patch('/api/guest/guests/:id/rsvp', rate('rsvp', 30), async (req, res) => {
     if (!['PENDING','ATTENDING','DECLINED'].includes(req.body.rsvp_status)) throw new HttpError(422, 'Confirmação inválida.');
@@ -139,9 +141,13 @@ export function createApp(config, { db, login }) {
   app.get('/api/guest/gifts', async (req, res) => {
     const page = paginate(req).page;
     // Uma view só retorna presentes livres e evita limites do PostgREST em filtros IN.
-    const { data, count, error } = await db.from('available_gifts').select('*', { count: 'exact' }).order('sort_order').order('id').range((page - 1) * 12, page * 12 - 1);
+    const includeReservation = req.query.include === 'reservation';
+    const [{ data, count, error }, reservation] = await Promise.all([
+      db.from('available_gifts').select('id,public_id,name,description,image_path,estimated_price,external_url,category_name', { count: 'exact' }).order('sort_order').order('id').range((page - 1) * 12, page * 12 - 1),
+      includeReservation ? result(db.from('gift_reservations').select(reservationSelect).eq('invitation_id', req.invitation.id).is('cancelled_at', null).maybeSingle()) : null,
+    ]);
     if (error) await result(Promise.resolve({ error }));
-    res.json({ items: data.map(photo), total: count, page, size: 12 });
+    res.json({ items: data.map(photo), total: count, page, size: 12, ...(includeReservation ? { reservation: reservation ? { ...reservation, gift: photo(reservation.gift) } : null } : {}) });
   });
   app.get('/api/guest/reservation', async (req, res) => {
     const data = await result(db.from('gift_reservations').select(reservationSelect).eq('invitation_id', req.invitation.id).is('cancelled_at', null).maybeSingle());
@@ -179,6 +185,7 @@ export function createApp(config, { db, login }) {
     const raw = secret(); const invId = id(req.params.id);
     await mutate(req, 'token.issue', { token_hash: hash(raw) }, invId);
     const url = `${config.origin}/i/${raw}`;
+    const { default: QRCode } = await import('qrcode');
     const qr = await QRCode.toDataURL(url, { width: 360, margin: 4, errorCorrectionLevel: 'M' });
     res.json({ url, qr });
   });
@@ -230,7 +237,9 @@ export function createApp(config, { db, login }) {
     res.json(await mutate(req, 'settings.update', data));
   });
   app.use('/api', (req, res) => res.status(404).json({ error: 'Rota não encontrada.' }));
-  app.use(express.static(publicDir, { index: false, dotfiles: 'deny' }));
+  app.use(express.static(publicDir, { index: false, dotfiles: 'deny',
+    setHeaders: res => res.set('Cache-Control', 'public, max-age=0, must-revalidate'),
+  }));
   app.get(/^\/(?:|admin(?:\/.*)?|convite(?:\/.*)?)$/, (req, res) => { res.set('Cache-Control', 'no-store'); res.sendFile(`${publicDir}/index.html`); });
   app.use((req, res) => res.status(404).type('text').send('Página não encontrada.'));
   app.use((error, req, res, next) => {

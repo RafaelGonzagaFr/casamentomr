@@ -211,3 +211,7 @@ Configure tambem foto externa HTTPS, locais, enderecos, mapa, historia e informa
 Em Convites, a secao Limpar todos os convites exige digitar EXCLUIR TODOS e confirmar a exclusao permanente. Apaga convites, convidados, respostas, tokens/links, reservas ativas e historicas e sessoes dos convidados. Mantem presentes, categorias, configuracoes, administradores, sessoes administrativas e registros de auditoria. Presentes antes reservados voltam a ficar disponiveis conforme sua situacao de cadastro. IDs nao sao reiniciados.
 
 Antes de publicar, aplicar supabase/migrations/20261021_clear_invitations.sql em banco existente. Essa migration APENAS cria a funcao administrativa; nao apaga registros ao ser executada. A exclusao ocorre somente ao acionar e confirmar a opcao na interface. Novas instalacoes incluem a funcao no schema.sql. Nao reaplicar schema.sql em banco existente. A funcao e restrita a service_role, valida administrador ativo e confirmacao, bloqueia escritas concorrentes e executa em transacao; endpoint exige sessao administrativa, origem e CSRF. Operacao registrada em activity_logs. Banco remoto nao alterado pelo agente.
+
+## Desempenho
+
+Consulte PERFORMANCE.md para gargalos, otimizacoes, comparacao controlada e limites de medicao. Para reproduzir o ensaio isolado (sem .env ou Supabase remoto): node scripts/measure-navigation.js f42ae38. O ensaio compara o commit base com os arquivos atuais, com latencia artificial; nao mede Web Vitals nem a Vercel. As otimizacoes nao exigem SQL novo.

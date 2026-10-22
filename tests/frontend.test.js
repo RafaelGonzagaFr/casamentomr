@@ -17,16 +17,17 @@ const errors=[];const windows=[];
 const wait=async predicate=> {for(let n=0;n<300;n++){if(predicate())return;await new Promise(resolve=>setTimeout(resolve,10));}throw new Error('Estado do frontend não alcançado.');};
 async function page(path) {
  const dom=new JSDOM(html,{url:`${config.origin}${path}`,runScripts:'outside-only',pretendToBeVisual:true});windows.push(dom.window);
- const window=dom.window;let cookie='';
+ const window=dom.window;let cookie='';const requests=[];
  window.scrollTo=()=>{};window.confirm=()=>true;
  window.addEventListener('error',event=>errors.push(event.message));
  window.fetch=async(input,options={})=>{
+  requests.push(String(input));
   const headers=new Headers(options.headers);headers.set('Cookie',cookie);if(options.method&&options.method!=='GET')headers.set('Origin',config.origin);
   const response=await fetch(new URL(input,config.origin),{...options,headers,redirect:'manual'});
   const set=response.headers.getSetCookie();if(set.length)cookie=set.at(-1).split(';')[0];return response;
  };
  await window.eval(`(async()=>{${js}\n})()`);
- return{window,doc:window.document,async click(selector){const el=window.document.querySelector(selector);assert.ok(el,`Elemento não encontrado: ${selector}`);el.click();},async submit(selector,values){const form=window.document.querySelector(selector);assert.ok(form);for(const[key,value]of Object.entries(values))form.elements.namedItem(key).value=value;form.dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));}};
+ return{window,requests,doc:window.document,async click(selector){const el=window.document.querySelector(selector);assert.ok(el,`Elemento não encontrado: ${selector}`);el.click();},async submit(selector,values){const form=window.document.querySelector(selector);assert.ok(form);for(const[key,value]of Object.entries(values))form.elements.namedItem(key).value=value;form.dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));}};
 }
 try{
  const admin=await page('/admin/login');await admin.submit('#login-form',{email:'admin@example.test',password:'123456789'});await wait(()=>admin.doc.querySelector('h1')?.textContent==='Seu casamento, organizado');
@@ -57,7 +58,9 @@ try{
  await guest.click('a[href="/convite"]');
  await wait(()=>guest.doc.querySelector('.rsvp-result'));
  assert.equal(guest.doc.querySelector('.rsvp-edit').open,false);
+ guest.requests.length=0;
  await guest.click('a[href="/convite/presentes"]');await wait(()=>guest.doc.querySelector('button[data-action="gift-choice"]'));
+ assert.deepEqual(guest.requests,['/api/guest/gifts?page=1&include=reservation']);
  await guest.click('button[data-action="gift-choice"]');await wait(()=>guest.doc.querySelector('h1')?.textContent==='Seu presente');assert.ok(guest.doc.querySelector('h2'));
  await guest.click('a[href="/convite/presentes"]');await wait(()=>guest.doc.querySelector('button[data-swap="true"]'));
  await guest.click('button[data-swap="true"]');await wait(()=>guest.doc.querySelector('h1')?.textContent==='Seu presente');

@@ -29,7 +29,10 @@ async function api(path, method = 'GET', body = {}) {
   }
   const response = await fetch(`/api${path}`, options);
   let data; try { data = await response.json(); } catch { throw new Error('Resposta inválida do servidor.'); }
-  if (!response.ok) throw new ApiError(response.status, data.error || 'Não foi possível concluir a operação.');
+  if (!response.ok) {
+    if (response.status === 401) session = null;
+    throw new ApiError(response.status, data.error || 'Não foi possível concluir a operação.');
+  }
   return data;
 }
 const form = (endpoint, method, message, content, options = {}) => `<form data-endpoint="${e(endpoint)}" data-method="${method}" data-message="${e(message)}"${options.next ? ` data-next="${e(options.next)}"` : ''}${options.confirm ? ` data-confirm="${e(options.confirm)}"` : ''} class="${e(options.class || 'stack')}">${content}</form>`;
@@ -152,12 +155,15 @@ function guestRsvp(guest, expired) {
 }
 async function guestHome() {
   const data = await api('/guest/home');
+  session = data.session;
+  publicInfo = data.public;
   const expired = data.settings.rsvp_deadline_at && Date.parse(data.settings.rsvp_deadline_at) < Date.now();
   const deadline = data.settings.rsvp_deadline_at ? new Date(data.settings.rsvp_deadline_at).toLocaleDateString('pt-BR', { timeZone: 'America/Bahia' }) : null;
   return `<article class="guest-invitation"><h1>${e(data.invitation.name)}</h1>${data.settings.welcome_message ? `<p class="invitation-message preserve-lines">${e(data.settings.welcome_message)}</p>` : ''}${data.settings.wedding_date ? `<p class="wedding-date">Dia da cerimônia: ${[dateOnly(data.settings.wedding_date),data.settings.ceremony_time].filter(Boolean).map(e).join(' - ')}</p>` : ''}<section class="invitation-rsvp" aria-label="Confirmação de presença">${deadline ? `<p class="rsvp-deadline">${expired ? 'O prazo de confirmação terminou em' : 'Confirme sua presença até'} <strong>${e(deadline)}</strong></p>` : ''}${data.guests.map(guest => guestRsvp(guest, expired)).join('') || empty('Nenhuma pessoa foi adicionada ao seu convite. Entre em contato com os noivos.')}</section><section class="invitation-countdown" aria-labelledby="countdown-heading"><h2 id="countdown-heading">Quanto tempo falta até o grande dia</h2><div id="wedding-countdown" class="countdown" role="group" aria-label="Contagem regressiva para o casamento"></div></section>${photosSection()}${weddingDetails(true)}</article>`;
 }
 async function guestGifts(page) {
-  const [data, mine] = await Promise.all([api(`/guest/gifts?page=${page}`),api('/guest/reservation')]);
+  const data = await api(`/guest/gifts?page=${page}&include=reservation`);
+  const mine = data.reservation;
   return `${heading('Lista de presentes','Escolha um presente para o seu convite. Cada item representa uma unidade.','Para o nosso lar')}${mine ? `<div class="info-box"><p>Você escolheu <strong>${e(mine.gift.name)}</strong>. <a href="/convite/meus-presentes" data-nav>Ver minha escolha</a>.</p></div>` : '<p class="muted">Confirme a presença de ao menos uma pessoa antes de escolher.</p>'}<div class="grid cols-3">${data.items.map(gift => `<article class="card gift-card">${gift.image_url ? `<img class="gift-img" src="${e(gift.image_url)}" alt="${e(gift.name)}" loading="lazy">` : '<div class="gift-placeholder" aria-hidden="true">♡</div>'}<p class="eyebrow">${e(gift.category_name)}</p><h2>${e(gift.name)}</h2><p class="muted">${e(gift.description)}</p>${gift.estimated_price !== null ? `<p class="gift-price">${e(money(gift.estimated_price))} <small>estimado</small></p>` : ''}${gift.external_url ? `<p><a href="${e(gift.external_url)}" target="_blank" rel="noopener noreferrer">Ver referência</a></p>` : ''}<div class="actions"><button class="btn" type="button" data-action="gift-choice" data-id="${gift.public_id}" data-swap="${!!mine}">${mine ? 'Trocar por este' : 'Escolher'}</button></div></article>`).join('') || empty('Nenhum presente disponível neste momento.')}</div>${pagination(data)}`;
 }
 async function guestMine() {
@@ -171,8 +177,8 @@ async function render() {
   const page = new URLSearchParams(location.search).get('page') || 1;
   layout(path); main.innerHTML = '<p class="loading">Carregando…</p>';
   try {
-    if ((path.startsWith('/admin') && path !== '/admin/login') || path.startsWith('/convite')) {
-      session = await api('/session');
+    if ((path.startsWith('/admin') && path !== '/admin/login') || (path.startsWith('/convite') && path !== '/convite')) {
+      if (!session) session = await api('/session');
       if (path.startsWith('/admin') && session.role !== 'admin') return navigate('/admin/login',true);
       if (path.startsWith('/convite') && session.role !== 'guest') throw new ApiError(401,'Abra o link do seu convite para continuar.');
     }
@@ -192,6 +198,7 @@ async function render() {
     else if (path === '/convite/meus-presentes') html = await guestMine();
     else html = `<section class="card">${heading('Página não encontrada')}<a href="/" data-nav>Voltar ao início</a></section>`;
     if (version !== renderVersion) return;
+    layout(path);
     main.innerHTML = html;
     startCountdown();
     document.title = `${main.querySelector('h1')?.textContent || publicInfo.couple_names} • ${publicInfo.couple_names}`;
@@ -221,7 +228,7 @@ document.addEventListener('submit', async event => {
   try {
     const fields = new FormData(element); const body = Object.fromEntries(fields);
     if (element.id === 'login-form') {
-      await api('/admin/login','POST',body); await navigate('/admin'); return;
+      await api('/admin/login','POST',body); session = null; await navigate('/admin'); return;
     }
     if (element.dataset.endpoint === '/admin/settings') body.rsvp_deadline_at = body.rsvp_deadline_at ? `${body.rsvp_deadline_at}:00-03:00` : null;
     const data = await api(element.dataset.endpoint,element.dataset.method,body);
@@ -268,5 +275,7 @@ document.addEventListener('click', async event => {
   finally { busy(button,false); }
 });
 window.addEventListener('popstate',render);
-try { publicInfo = await api('/public'); } catch (error) { tell(error.message,true); }
+if (location.pathname.replace(/\/$/, '') !== '/convite') {
+  try { publicInfo = await api('/public'); } catch (error) { tell(error.message,true); }
+}
 await render();

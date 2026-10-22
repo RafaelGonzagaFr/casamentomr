@@ -8,6 +8,25 @@ import { createDatabase,reset,testAdapter,family,gift,ADMIN } from './helpers.js
 let db,server,base,config;
 const PASSWORD=' senha preservada ';
 const allowedUser={id:ADMIN};
+test('respostas combinadas isolam reserva e sessão por convite e não usam cache',async () => {
+ const admin=client();await admin.login();
+ const a=await family(db,'Familia A'),b=await family(db,'Familia B');const item=await gift(db);
+ const first=client(),second=client();const issued=await token(admin,a.id);
+ await first.enter(issued.url);await second.enter((await token(admin,b.id)).url);
+ await first.request(`/api/guest/gifts/${item.public_id}/reserve`,'POST');
+ const home=await first.request('/api/guest/home');
+ assert.equal(home.headers.get('cache-control'),'no-store');
+ assert.equal(home.data.session.csrf_token,first.csrf);assert.equal(home.data.session.role,'guest');
+ assert.equal(home.data.public.guest_limit,undefined);
+ const own=await first.request('/api/guest/gifts?include=reservation');
+ const other=await second.request('/api/guest/gifts?include=reservation');
+ assert.equal(own.data.reservation.invitation_id,a.id);assert.equal(other.data.reservation,null);
+ assert.equal(other.headers.get('cache-control'),'no-store');
+ assert.equal(other.data.items.some(g=>g.public_id===item.public_id),false);
+ const tokenId=(await db.query('select id from public.invitation_tokens where invitation_id=$1',[a.id])).rows[0].id;
+ await admin.request(`/api/admin/invitations/${a.id}/tokens/${tokenId}`,'DELETE');
+ assert.equal((await first.request('/api/guest/gifts?include=reservation')).status,401);
+});
 test('limpeza exige admin e confirmação e remove vínculos preservando catálogo e sessão admin',async () => {
  const migration=await readFile(new URL('../supabase/migrations/20261022_fix_clear_invitations_where.sql',import.meta.url),'utf8');
  // Embedded PostgreSQL does not include Supabase's safe-update extension.
@@ -138,7 +157,8 @@ test('assets, rotas frontend e dados sensíveis têm headers apropriados',async 
   const r=await c.request(path);assert.equal(r.status,200);assert.match(r.headers.get('content-security-policy'),/script-src 'self'/);
  }
  assert.equal((await c.request('/.env')).status,404);
- assert.equal((await c.request('/api/session')).headers.get('cache-control'),'no-store');
+   assert.equal((await c.request('/api/session')).headers.get('cache-control'),'no-store');
+   assert.match((await c.request('/app.js')).headers.get('cache-control'),/must-revalidate/);
  assert.equal((await c.request('/server/index.js')).status,404);
 });
 
